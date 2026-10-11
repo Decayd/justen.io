@@ -24,9 +24,8 @@ public data, and lets you design Home Screen and Lock Screen widgets in a built-
 </tr>
 </table>
 
-*Every widget size (Small, Medium, Large, iPad Extra Large and the Lock Screen circular, rectangular and
-inline sizes) rendered by the snapshot tests. These images use the illustrative sample season, so the
-results shown are made up; the app itself shows live data.*
+*Each sheet shows one widget in every size, rendered by the snapshot tests. These images use the
+illustrative sample season, so the results shown are made up; the app itself shows live data.*
 
 ## Features
 
@@ -42,8 +41,8 @@ results shown are made up; the app itself shows live data.*
   or full team Livery), an accent colour and options, and preview them live at real size in dark, light
   and tinted appearances.
 
-**Widgets** (every widget supports Small, Medium, Large, iPad Extra Large and the Lock Screen
-circular, rectangular and inline sizes)
+**Widgets**: every widget comes in Small, Medium, Large and iPad Extra Large, plus the Lock Screen
+circular, rectangular and inline sizes (Calendar skips inline).
 
 | Widget | What it shows |
 | --- | --- |
