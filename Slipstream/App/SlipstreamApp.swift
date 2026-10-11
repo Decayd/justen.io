@@ -9,7 +9,19 @@ struct SlipstreamApp: App {
             RootView()
                 .environment(model)
                 .tint(Color(hex: "#E10600"))
+                .preferredColorScheme(Self.forcedColorScheme)
                 .onOpenURL { model.open($0) }
+        }
+    }
+}
+
+extension SlipstreamApp {
+    /// `-SlipstreamColorScheme dark|light` pins the appearance (used by screenshot tests).
+    static var forcedColorScheme: ColorScheme? {
+        switch UserDefaults.standard.string(forKey: "SlipstreamColorScheme") {
+        case "dark": .dark
+        case "light": .light
+        default: nil
         }
     }
 }

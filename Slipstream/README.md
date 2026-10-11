@@ -60,6 +60,7 @@ Shared/                Code compiled into both targets
   Studio/              Widget designs, settings, sample data
   WidgetViews/         Every widget layout for every size
 Tests/                 Unit tests plus a snapshot test that renders every widget to PNG
+UITests/               Screenshot walkthrough of the app
 Config/                Info.plists and entitlements
 tools/                 Scripts that generate circuits.json and the app icon
 ```
@@ -79,8 +80,11 @@ Requires iOS 18 or later.
 
 `xcodebuild test -project Slipstream.xcodeproj -scheme Slipstream -destination 'platform=iOS Simulator,name=iPhone 16 Pro'`
 
-`WidgetSnapshotTests` renders every widget in every size to PNG contact sheets. Set
-`TEST_RUNNER_SNAPSHOT_DIR=/some/folder` to choose where they're written. The GitHub Actions workflow
-(`.github/workflows/slipstream-ios.yml`) builds the app, runs the tests and uploads the snapshots.
+`WidgetSnapshotTests` renders every widget in every size to PNG contact sheets, and the
+`SlipstreamUITests` target walks through the app (dark and light) and saves screenshots. Export
+`TEST_RUNNER_SNAPSHOT_DIR=/some/folder` before running `xcodebuild test` to choose where they're
+written. Tests run offline against the sample season (the `-SlipstreamSampleData` launch argument).
+The GitHub Actions workflow (`.github/workflows/slipstream-ios.yml`) builds the app, runs the tests,
+builds a Release device build and uploads the images as an artifact.
 
 Slipstream is unofficial and not associated with the Formula 1 companies.

@@ -16,10 +16,10 @@ enum Route: Hashable {
 @MainActor
 @Observable
 final class AppModel {
-    private(set) var snapshot: SeasonSnapshot?
-    private(set) var stats: SeasonStats?
+    private(set) var snapshot: SeasonSnapshot? = nil
+    private(set) var stats: SeasonStats? = nil
     private(set) var isRefreshing = false
-    private(set) var lastError: String?
+    private(set) var lastError: String? = nil
     private(set) var designs: [WidgetDesign] = []
     private(set) var settings = AppSettings.load()
     private var archives: [Int: SeasonSnapshot] = [:]
@@ -38,17 +38,21 @@ final class AppModel {
     private static let sample = SampleData.snapshot(now: Date())
     private static let sampleStats = SeasonStats(snapshot: sample)
 
+    /// Tests and screenshots run against the illustrative season, offline.
+    let usesSampleData = ProcessInfo.processInfo.arguments.contains("-SlipstreamSampleData")
+        || ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
+
     init() {
-        let cached = SnapshotStore.cachedSnapshot()
+        let cached = usesSampleData ? SampleData.snapshot(now: Date()) : SnapshotStore.cachedSnapshot()
         snapshot = cached
         stats = cached.map { SeasonStats(snapshot: $0) }
-        designs = DesignStore.load()
+        designs = usesSampleData ? [] : DesignStore.load()
     }
 
     // MARK: Data
 
     func refresh(force: Bool = false) async {
-        guard !isRefreshing else { return }
+        guard !isRefreshing, !usesSampleData else { return }
         isRefreshing = true
         defer { isRefreshing = false }
         do {

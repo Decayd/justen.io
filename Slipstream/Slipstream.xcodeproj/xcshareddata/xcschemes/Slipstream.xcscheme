@@ -41,6 +41,17 @@
                ReferencedContainer = "container:Slipstream.xcodeproj">
             </BuildableReference>
          </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "A10000000000000000000033"
+               BuildableName = "SlipstreamUITests.xctest"
+               BlueprintName = "SlipstreamUITests"
+               ReferencedContainer = "container:Slipstream.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
    </TestAction>
    <LaunchAction

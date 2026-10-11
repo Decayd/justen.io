@@ -25,7 +25,7 @@ jobs:
       run:
         working-directory: Slipstream
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Select newest stable Xcode
         run: |
@@ -61,6 +61,8 @@ jobs:
       - name: Build and test
         run: |
           mkdir -p "$GITHUB_WORKSPACE/snapshots"
+          # TEST_RUNNER_-prefixed environment variables are forwarded to the test processes.
+          export TEST_RUNNER_SNAPSHOT_DIR="$GITHUB_WORKSPACE/snapshots"
           set +e
           xcodebuild test \
             -project Slipstream.xcodeproj \
@@ -68,7 +70,6 @@ jobs:
             -destination "id=${{ steps.sim.outputs.udid }}" \
             -resultBundlePath "$RUNNER_TEMP/Slipstream.xcresult" \
             CODE_SIGNING_ALLOWED=NO \
-            TEST_RUNNER_SNAPSHOT_DIR="$GITHUB_WORKSPACE/snapshots" \
             > "$RUNNER_TEMP/xcodebuild.log" 2>&1
           STATUS=$?
           set -e
@@ -79,6 +80,8 @@ jobs:
           grep -E "(error:|Fatal error|Test Case .* failed|XCTAssert|\*\* (BUILD|TEST) (FAILED|SUCCEEDED))" "$RUNNER_TEMP/xcodebuild.log" | sort -u | head -n 120 || true
           echo "===== Test summary ====="
           grep -E "Executed [0-9]+ tests" "$RUNNER_TEMP/xcodebuild.log" | tail -n 3 || true
+          echo "===== Snapshots ====="
+          ls -la "$GITHUB_WORKSPACE/snapshots" || true
           exit $STATUS
 
       - name: Build widget extension for device (Release)
