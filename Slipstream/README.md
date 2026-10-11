@@ -3,6 +3,31 @@
 Slipstream tracks the Formula 1 season (standings, calendar, results and driver/team stats) from
 public data, and lets you design Home Screen and Lock Screen widgets in a built-in **Widget Studio**.
 
+![Slipstream app screens](docs/app-screens.jpg)
+
+<table>
+<tr>
+<td><img src="docs/widgets-nextRace-dark.jpg" alt="Next Race widgets"></td>
+<td><img src="docs/widgets-driverStandings-dark.jpg" alt="Drivers' standings widgets"></td>
+</tr>
+<tr>
+<td><img src="docs/widgets-driver-livery.jpg" alt="Driver widgets in team livery"></td>
+<td><img src="docs/widgets-lastRace-dark.jpg" alt="Race result widgets"></td>
+</tr>
+<tr>
+<td><img src="docs/widgets-titleFight-dark.jpg" alt="Title fight widgets"></td>
+<td><img src="docs/widgets-team-livery.jpg" alt="Team widgets in team livery"></td>
+</tr>
+<tr>
+<td><img src="docs/widgets-calendar-light.jpg" alt="Calendar widgets"></td>
+<td><img src="docs/widgets-constructorStandings-light.jpg" alt="Constructors' standings widgets"></td>
+</tr>
+</table>
+
+*Every widget size (Small, Medium, Large, iPad Extra Large and the Lock Screen circular, rectangular and
+inline sizes) rendered by the snapshot tests. These images use the illustrative sample season, so the
+results shown are made up; the app itself shows live data.*
+
 ## Features
 
 **App**
@@ -85,6 +110,6 @@ Requires iOS 18 or later.
 `TEST_RUNNER_SNAPSHOT_DIR=/some/folder` before running `xcodebuild test` to choose where they're
 written. Tests run offline against the sample season (the `-SlipstreamSampleData` launch argument).
 The GitHub Actions workflow (`.github/workflows/slipstream-ios.yml`) builds the app, runs the tests,
-builds a Release device build and uploads the images as an artifact.
+builds a Release device build and uploads the rendered images as the `widget-snapshots` artifact.
 
 Slipstream is unofficial and not associated with the Formula 1 companies.

@@ -37,7 +37,8 @@ struct WidgetRenderContext {
         now: Date,
         renderStyle: RenderStyle,
         colorScheme: ColorScheme,
-        settings: AppSettings
+        settings: AppSettings,
+        showsBackground: Bool = true
     ) -> WidgetRenderContext {
         let driverId = design.driverId ?? settings.favoriteDriverId
         let driver = driverId.flatMap { snapshot.driverStanding(id: $0) } ?? snapshot.driverStandings.first
@@ -60,13 +61,17 @@ struct WidgetRenderContext {
 
         // The livery theme only makes sense for single-subject widgets.
         let theme: WidgetTheme = (design.theme == .team && !design.content.supportsLivery) ? .glow : design.theme
-        let palette = WidgetPalette.resolve(
+        var palette = WidgetPalette.resolve(
             theme: theme,
             accent: design.accent,
             teamRGB: teamRGB,
             colorScheme: colorScheme,
             renderStyle: size.isAccessory ? .vibrant : renderStyle
         )
+        // StandBy and some iPad contexts remove the background: keep text light on black.
+        if !showsBackground && palette.renderStyle == .fullColor {
+            palette = .dark(accent: palette.accentRGB, background: .none)
+        }
 
         return WidgetRenderContext(
             snapshot: snapshot,

@@ -74,6 +74,7 @@ struct SlipstreamWidgetView: View {
     @Environment(\.widgetFamily) private var family
     @Environment(\.widgetRenderingMode) private var renderingMode
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.showsWidgetContainerBackground) private var showsBackground
 
     var body: some View {
         let size = WidgetSize(family)
@@ -85,7 +86,8 @@ struct SlipstreamWidgetView: View {
                 now: entry.date,
                 renderStyle: RenderStyle(renderingMode),
                 colorScheme: colorScheme,
-                settings: entry.settings
+                settings: entry.settings,
+                showsBackground: showsBackground
             )
             WidgetContentView(context: context)
                 .containerBackground(for: .widget) {
