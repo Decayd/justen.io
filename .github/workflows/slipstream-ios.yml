@@ -1,0 +1,115 @@
+name: Slipstream iOS
+
+on:
+  push:
+    paths:
+      - "Slipstream/**"
+      - ".github/workflows/slipstream-ios.yml"
+  pull_request:
+    paths:
+      - "Slipstream/**"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: slipstream-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    runs-on: macos-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: Slipstream
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select newest stable Xcode
+        run: |
+          ls -d /Applications/Xcode*.app || true
+          XCODE=$(ls -d /Applications/Xcode_*.app 2>/dev/null | grep -vi -e beta -e release_candidate | sort -V | tail -1)
+          if [ -n "$XCODE" ]; then sudo xcode-select -s "$XCODE/Contents/Developer"; fi
+          xcodebuild -version
+
+      - name: Pick an iPhone simulator
+        id: sim
+        run: |
+          UDID=$(python3 - <<'PY'
+          import json, re, subprocess
+          data = json.loads(subprocess.check_output(["xcrun", "simctl", "list", "devices", "available", "-j"]))
+          best = None
+          for runtime, devices in data["devices"].items():
+              match = re.search(r"iOS-(\d+)-(\d+)", runtime)
+              if not match:
+                  continue
+              version = (int(match.group(1)), int(match.group(2)))
+              for device in devices:
+                  name = device["name"]
+                  if name.startswith("iPhone") and "Pro" in name and "Max" not in name:
+                      candidate = (version, name, device["udid"])
+                      if best is None or candidate > best:
+                          best = candidate
+          print(best[2])
+          PY
+          )
+          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
+          xcrun simctl list devices available | grep "$UDID"
+
+      - name: Build and test
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/snapshots"
+          set +e
+          xcodebuild test \
+            -project Slipstream.xcodeproj \
+            -scheme Slipstream \
+            -destination "id=${{ steps.sim.outputs.udid }}" \
+            -resultBundlePath "$RUNNER_TEMP/Slipstream.xcresult" \
+            CODE_SIGNING_ALLOWED=NO \
+            TEST_RUNNER_SNAPSHOT_DIR="$GITHUB_WORKSPACE/snapshots" \
+            > "$RUNNER_TEMP/xcodebuild.log" 2>&1
+          STATUS=$?
+          set -e
+          echo "::group::Full xcodebuild log (tail)"
+          tail -n 150 "$RUNNER_TEMP/xcodebuild.log"
+          echo "::endgroup::"
+          echo "===== Errors ====="
+          grep -E "(error:|Fatal error|Test Case .* failed|XCTAssert|\*\* (BUILD|TEST) (FAILED|SUCCEEDED))" "$RUNNER_TEMP/xcodebuild.log" | sort -u | head -n 120 || true
+          echo "===== Test summary ====="
+          grep -E "Executed [0-9]+ tests" "$RUNNER_TEMP/xcodebuild.log" | tail -n 3 || true
+          exit $STATUS
+
+      - name: Build widget extension for device (Release)
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -project Slipstream.xcodeproj \
+            -scheme Slipstream \
+            -configuration Release \
+            -destination "generic/platform=iOS" \
+            CODE_SIGNING_ALLOWED=NO \
+            -quiet 2>&1 | tail -n 60
+
+      - name: Upload widget snapshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: widget-snapshots
+          path: snapshots/*.png
+          if-no-files-found: ignore
+
+      - name: Publish snapshots branch for review
+        if: always() && github.event_name != 'pull_request'
+        working-directory: snapshots
+        run: |
+          if ! ls *.png >/dev/null 2>&1; then echo "No snapshots rendered"; exit 0; fi
+          git init -q
+          git checkout -q -b slipstream-snapshots
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          echo "Widget snapshots rendered from ${GITHUB_SHA} on ${GITHUB_REF_NAME}." > README.md
+          git add -A
+          git commit -qm "Widget snapshots for ${GITHUB_SHA}"
+          git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" slipstream-snapshots
