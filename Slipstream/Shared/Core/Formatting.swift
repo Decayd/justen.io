@@ -34,16 +34,11 @@ enum Fmt {
         date.formatted(.dateTime.day().month(.abbreviated))
     }
 
-    /// "3–5 Oct" for a race weekend.
+    /// "Oct 3–5" / "3–5 Oct" for a race weekend, following the user's locale.
     static func weekend(_ race: Race) -> String {
-        let calendar = Calendar.current
-        let start = race.weekendStart
-        let end = race.start
-        if calendar.isDate(start, equalTo: end, toGranularity: .month) {
-            let first = start.formatted(.dateTime.day())
-            return "\(first)–\(day(end))"
-        }
-        return "\(day(start)) – \(day(end))"
+        let formatter = DateIntervalFormatter()
+        formatter.dateTemplate = "MMMd"
+        return formatter.string(from: race.weekendStart, to: race.start)
     }
 
     /// "Sun 20:00"

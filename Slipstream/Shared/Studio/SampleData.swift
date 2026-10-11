@@ -176,10 +176,11 @@ enum SampleData {
             raceOrder.removeLast(retirements)
             let fastest = raceOrder[Int(random.next() * 5)]
             let winnerMillis = 5_400_000 + Int(random.next() * 600_000)
+            var gap = 0.0
             round.race = (raceOrder + retired).enumerated().map { position, index in
                 let classified = position < raceOrder.count
                 let grid = (qualifyingOrder.firstIndex(of: index) ?? position) + 1
-                let gap = Double(position) * (3.2 + random.next() * 4.5)
+                gap += position == 0 ? 0 : 1.2 + random.next() * 6
                 let time: String? = classified ? (position == 0 ? formatRaceTime(winnerMillis) : String(format: "+%.3f", gap)) : nil
                 return RaceResult(
                     position: position + 1,

@@ -10,7 +10,8 @@ struct NextRaceWidgetView: View {
             switch context.size {
             case .small: NextRaceSmall(context: context, race: race, target: target)
             case .medium: NextRaceMedium(context: context, race: race, target: target)
-            case .large, .extraLarge: NextRaceLarge(context: context, race: race, target: target)
+            case .large: NextRaceLarge(context: context, race: race, target: target)
+            case .extraLarge: NextRaceExtraLarge(context: context, race: race, target: target)
             case .circular: NextRaceCircular(context: context, race: race, target: target)
             case .rectangular: NextRaceRectangular(context: context, race: race, target: target)
             case .inline: NextRaceInline(context: context, race: race, target: target)
@@ -88,13 +89,15 @@ private struct NextRaceMedium: View {
                         HStack(spacing: 5) {
                             if context.showFlags { FlagText(flag: context.flag(for: race), size: 14) }
                             CapsLabel("Round \(race.round)", size: 8.5)
+                                .minimumScaleFactor(0.75)
                         }
                         if race.isSprintWeekend { SprintBadge() }
                     }
-                    Spacer(minLength: 4)
+                    .layoutPriority(1)
+                    Spacer(minLength: 2)
                     if context.design.showTrackMap {
                         TrackMapView(circuit: race.circuit, color: palette.accent, lineWidth: 1.8)
-                            .frame(width: 70, height: 44)
+                            .frame(width: 60, height: 42)
                     }
                 }
                 Spacer(minLength: 2)
@@ -121,7 +124,7 @@ private struct NextRaceMedium: View {
                 .frame(width: 1)
 
             ScheduleList(race: race, now: context.now, highlight: target)
-                .frame(width: 128)
+                .frame(width: 122)
         }
         .widgetPadding(.medium)
     }
@@ -197,6 +200,68 @@ private struct NextRaceLarge: View {
             WeekendGrid(race: race, now: context.now, highlight: target)
         }
         .widgetPadding(context.size)
+    }
+}
+
+// MARK: - Extra large (iPad)
+
+private struct NextRaceExtraLarge: View {
+    let context: WidgetRenderContext
+    let race: Race
+    let target: Session
+    @Environment(\.palette) private var palette
+
+    private var outline: CircuitOutline? { CircuitCatalog.outline(for: race.circuit) }
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 26) {
+            VStack(alignment: .leading, spacing: 0) {
+                HStack(spacing: 6) {
+                    if context.showFlags { FlagText(flag: context.flag(for: race), size: 15) }
+                    CapsLabel("Round \(race.round) of \(context.snapshot.races.count)", size: 9)
+                    if race.isSprintWeekend { SprintBadge() }
+                }
+                Text(race.name.uppercased())
+                    .font(Typo.display(20))
+                    .foregroundStyle(palette.primary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+                    .padding(.top, 6)
+                Text("\(race.circuit.name) · \(race.circuit.locality)")
+                    .font(Typo.text(11, weight: .medium))
+                    .foregroundStyle(palette.secondary)
+                    .lineLimit(1)
+                    .padding(.top, 2)
+                TrackMapView(circuit: race.circuit, color: palette.accent, lineWidth: 3)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .padding(.vertical, 10)
+                HStack {
+                    if let length = outline?.lengthText { MiniStat(label: "Length", value: length) }
+                    Spacer(minLength: 0)
+                    if let first = outline?.firstGP { MiniStat(label: "First GP", value: "\(first)", alignment: .trailing) }
+                }
+            }
+            .frame(maxWidth: .infinity)
+
+            VStack(alignment: .leading, spacing: 0) {
+                CapsLabel(target.state(at: context.now) == .upcoming ? "until \(target.kind.label)" : target.kind.label,
+                          size: 8, color: palette.tertiary)
+                CountdownText(countdown: Countdown(now: context.now, session: target), numberSize: 34, unitSize: 10)
+                    .padding(.top, 4)
+                Text(Fmt.sessionMoment(target.start))
+                    .font(Typo.text(12, weight: .semibold))
+                    .foregroundStyle(palette.secondary)
+                    .padding(.top, 2)
+                Rectangle()
+                    .fill(palette.hairline)
+                    .frame(height: 1)
+                    .padding(.vertical, 12)
+                WeekendGrid(race: race, now: context.now, highlight: target)
+                Spacer(minLength: 0)
+            }
+            .frame(width: 300)
+        }
+        .widgetPadding(.extraLarge)
     }
 }
 

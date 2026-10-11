@@ -120,7 +120,7 @@ private struct StandingsSmall: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            StandingsHeader(context: context, title: title, compact: true)
+            StandingsHeader(context: context, title: isTeams ? "Teams" : title, compact: true)
             Spacer(minLength: 6)
             VStack(spacing: 7) {
                 ForEach(lines.prefix(3)) { line in
@@ -270,7 +270,7 @@ private struct StandingsLarge: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            StandingsHeader(context: context, title: isTeams ? "Constructors' Championship" : "Drivers' Championship")
+            StandingsHeader(context: context, title: title)
             Spacer(minLength: 8)
             VStack(spacing: 0) {
                 ForEach(lines.prefix(10)) { line in
@@ -328,13 +328,14 @@ private struct StandingsExtraLarge: View {
     @Environment(\.palette) private var palette
 
     var body: some View {
-        let half = Int((Double(min(lines.count, 22)) / 2).rounded(.up))
+        let shown = Array(lines.prefix(22))
+        let rows = Int((Double(shown.count) / 2).rounded(.up))
         VStack(alignment: .leading, spacing: 0) {
             StandingsHeader(context: context, title: isTeams ? "Constructors' Championship" : "Drivers' Championship")
             Spacer(minLength: 8)
-            HStack(alignment: .top, spacing: 18) {
-                column(Array(lines.prefix(half)))
-                column(Array(lines.dropFirst(half).prefix(half)))
+            HStack(alignment: .top, spacing: 22) {
+                column(Array(shown.prefix(rows)), slots: rows)
+                column(Array(shown.dropFirst(rows)), slots: rows)
             }
             Rectangle().fill(palette.hairline).frame(height: 1).padding(.vertical, 6)
             ChampionshipFooter(context: context, isTeams: isTeams)
@@ -342,11 +343,15 @@ private struct StandingsExtraLarge: View {
         .widgetPadding(.extraLarge)
     }
 
-    private func column(_ items: [StandingsLine]) -> some View {
+    private func column(_ items: [StandingsLine], slots: Int) -> some View {
         VStack(spacing: 0) {
-            ForEach(items) { line in
-                BarRow(line: line, leaderPoints: lines.first?.points ?? 1, isTeams: isTeams, showSubtitle: true, showFlag: context.showFlags)
-                    .frame(maxHeight: .infinity)
+            ForEach(0..<slots, id: \.self) { index in
+                if index < items.count {
+                    BarRow(line: items[index], leaderPoints: lines.first?.points ?? 1, isTeams: isTeams, showSubtitle: true, showFlag: context.showFlags)
+                        .frame(maxHeight: .infinity)
+                } else {
+                    Color.clear.frame(maxHeight: .infinity)
+                }
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)

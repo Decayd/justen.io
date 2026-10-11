@@ -9,7 +9,8 @@ struct TeamWidgetView: View {
             switch context.size {
             case .small: TeamSmall(context: context, standing: standing)
             case .medium: TeamMedium(context: context, standing: standing)
-            case .large, .extraLarge: TeamLarge(context: context, standing: standing)
+            case .large: TeamLarge(context: context, standing: standing)
+            case .extraLarge: TeamExtraLarge(context: context, standing: standing)
             case .circular: TeamCircular(context: context, standing: standing)
             case .rectangular: TeamRectangular(context: context, standing: standing)
             case .inline: TeamInline(standing: standing)
@@ -50,7 +51,7 @@ private struct TeamCard: View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 5) {
                 if context.showFlags { FlagText(flag: Flags.nationality(standing.constructor.nationality), size: 12) }
-                CapsLabel("Constructors", size: 8, color: palette.secondary)
+                CapsLabel("Team", size: 8, color: palette.secondary)
                 Spacer(minLength: 2)
                 Text("P\(standing.position)")
                     .font(Typo.display(15, weight: .black))
@@ -167,7 +168,14 @@ private struct TeamLarge: View {
     var body: some View {
         let stats = context.stats.team(standing.constructor.id)
         let lineup = context.lineup(for: standing)
-        let series = context.teamSeries(rivals, emphasize: standing.constructor.id)
+        let series = context.teamSeries(rivals, emphasize: standing.constructor.id).map { line -> ProgressSeries in
+            var copy = line
+            if line.id != standing.constructor.id {
+                copy.dashed = true
+                if palette.isLivery { copy.color = palette.secondary }
+            }
+            return copy
+        }
         VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .center, spacing: 10) {
                 RoundedRectangle(cornerRadius: 3, style: .continuous)
@@ -236,6 +244,73 @@ private struct TeamLarge: View {
             .padding(.top, 8)
         }
         .widgetPadding(context.size)
+    }
+}
+
+// MARK: - Extra large (iPad)
+
+private struct TeamExtraLarge: View {
+    let context: WidgetRenderContext
+    let standing: ConstructorStanding
+    @Environment(\.palette) private var palette
+
+    var body: some View {
+        let stats = context.stats.team(standing.constructor.id)
+        let lineup = context.lineup(for: standing)
+        let table = context.snapshot.constructorStandings
+        let index = table.firstIndex { $0.id == standing.id } ?? 0
+        let rivals = [standing] + [index - 1, index + 1].filter { table.indices.contains($0) }.map { table[$0] }
+        let series = context.teamSeries(rivals, emphasize: standing.constructor.id).map { line -> ProgressSeries in
+            var copy = line
+            if line.id != standing.constructor.id {
+                copy.dashed = true
+                if palette.isLivery { copy.color = palette.secondary }
+            }
+            return copy
+        }
+        HStack(alignment: .top, spacing: 24) {
+            VStack(alignment: .leading, spacing: 0) {
+                TeamCard(context: context, standing: standing, nameSize: 20)
+                    .frame(height: 140)
+                Grid(alignment: .leading, horizontalSpacing: 10, verticalSpacing: 12) {
+                    GridRow {
+                        StatTile(value: "\(stats.wins)", label: "Wins", valueSize: 18)
+                        StatTile(value: "\(stats.podiums)", label: "Podiums", valueSize: 18)
+                    }
+                    GridRow {
+                        StatTile(value: "\(stats.poles)", label: "Poles", valueSize: 18)
+                        StatTile(value: "\(stats.oneTwos)", label: "1–2s", valueSize: 18)
+                    }
+                }
+                .padding(12)
+                .background(palette.card, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .padding(.top, 12)
+                Spacer(minLength: 0)
+            }
+            .frame(width: 270)
+
+            VStack(alignment: .leading, spacing: 8) {
+                PointsLegend(series: series, size: 10)
+                PointsChart(series: series)
+                ForEach(Array(lineup.enumerated()), id: \.offset) { _, entry in
+                    HStack(spacing: 8) {
+                        Text(entry.driver.familyName.uppercased())
+                            .font(Typo.display(10.5, weight: .heavy))
+                            .foregroundStyle(palette.primary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.6)
+                            .frame(width: 110, alignment: .leading)
+                        Text(Fmt.points(entry.points))
+                            .font(Typo.number(11, weight: .bold))
+                            .foregroundStyle(palette.secondary)
+                        Spacer(minLength: 4)
+                        RecentForm(badges: context.stats.driver(entry.driver.id).recent(5), chipWidth: 26, chipHeight: 19)
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity)
+        }
+        .widgetPadding(.extraLarge)
     }
 }
 

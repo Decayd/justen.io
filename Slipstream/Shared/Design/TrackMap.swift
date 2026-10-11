@@ -125,7 +125,7 @@ struct TrackMapView: View {
             ZStack {
                 if glow && palette.renderStyle == .fullColor {
                     TrackShape(outline: outline, inset: inset)
-                        .stroke(color.opacity(0.5), style: StrokeStyle(lineWidth: lineWidth * 3, lineCap: .round, lineJoin: .round))
+                        .stroke(color.opacity(palette.isDark ? 0.5 : 0.22), style: StrokeStyle(lineWidth: lineWidth * 3, lineCap: .round, lineJoin: .round))
                         .blur(radius: lineWidth * 1.4)
                 }
                 TrackShape(outline: outline, inset: inset)

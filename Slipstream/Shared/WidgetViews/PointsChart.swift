@@ -18,11 +18,29 @@ struct PointsChart: View {
     let series: [ProgressSeries]
     var showsAxis = true
     var lineWidth: CGFloat = 2
+    /// Plot only the last `window` rounds and zoom the axis to the spread between the lines.
+    var window: Int?
     @Environment(\.palette) private var palette
 
-    private var maxRound: Int { series.flatMap(\.points).map(\.round).max() ?? 1 }
-    private var minRound: Int { series.flatMap(\.points).map(\.round).min() ?? 0 }
-    private var maxPoints: Double { max(series.flatMap(\.points).map(\.points).max() ?? 1, 1) }
+    private var visible: [ProgressSeries] {
+        guard let window, let last = series.flatMap(\.points).map(\.round).max() else { return series }
+        return series.map { line in
+            var copy = line
+            copy.points = line.points.filter { $0.round >= last - window }
+            return copy
+        }
+    }
+
+    private var maxRound: Int { visible.flatMap(\.points).map(\.round).max() ?? 1 }
+    private var minRound: Int { visible.flatMap(\.points).map(\.round).min() ?? 0 }
+
+    private var yDomain: ClosedRange<Double> {
+        let values = visible.flatMap(\.points).map(\.points)
+        let top = max(values.max() ?? 1, 1)
+        guard window != nil, let bottom = values.min() else { return 0...(top * 1.05) }
+        let pad = max((top - bottom) * 0.12, 2)
+        return max(0, bottom - pad)...(top + pad)
+    }
 
     var body: some View {
         if showsAxis {
@@ -44,11 +62,11 @@ struct PointsChart: View {
 
     private var chart: some View {
         Chart {
-            ForEach(series.filter(\.emphasized)) { line in
+            ForEach(visible.filter(\.emphasized)) { line in
                 ForEach(line.points) { point in
                     AreaMark(
                         x: .value("Round", point.round),
-                        yStart: .value("Base", 0),
+                        yStart: .value("Base", yDomain.lowerBound),
                         yEnd: .value("Points", point.points)
                     )
                     .interpolationMethod(.monotone)
@@ -61,7 +79,7 @@ struct PointsChart: View {
                     )
                 }
             }
-            ForEach(series) { line in
+            ForEach(visible) { line in
                 ForEach(line.points) { point in
                     LineMark(
                         x: .value("Round", point.round),
@@ -86,7 +104,7 @@ struct PointsChart: View {
         }
         .chartLegend(.hidden)
         .chartXScale(domain: minRound...max(maxRound, minRound + 1))
-        .chartYScale(domain: 0...(maxPoints * 1.05))
+        .chartYScale(domain: yDomain)
         .chartXAxis(.hidden)
         .widgetAccentable()
     }

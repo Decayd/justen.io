@@ -9,7 +9,8 @@ struct DriverWidgetView: View {
             switch context.size {
             case .small: DriverSmall(context: context, standing: standing)
             case .medium: DriverMedium(context: context, standing: standing)
-            case .large, .extraLarge: DriverLarge(context: context, standing: standing)
+            case .large: DriverLarge(context: context, standing: standing)
+            case .extraLarge: DriverExtraLarge(context: context, standing: standing)
             case .circular: DriverCircular(context: context, standing: standing)
             case .rectangular: DriverRectangular(context: context, standing: standing)
             case .inline: DriverInline(context: context, standing: standing)
@@ -171,6 +172,11 @@ private struct DriverMedium: View {
             DriverCard(context: context, standing: standing)
                 .frame(width: 136)
                 .frame(maxHeight: .infinity)
+                .background(alignment: .topTrailing) {
+                    DriverNumberWatermark(context: context, standing: standing, size: 70)
+                        .frame(width: 136, alignment: .trailing)
+                        .clipped()
+                }
 
             VStack(alignment: .leading, spacing: 0) {
                 HStack(spacing: 6) {
@@ -186,10 +192,6 @@ private struct DriverMedium: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .widgetPadding(.medium)
-        .background(alignment: .topLeading) {
-            DriverNumberWatermark(context: context, standing: standing, size: 84)
-                .offset(x: 70)
-        }
     }
 }
 
@@ -317,6 +319,68 @@ private struct DriverLarge: View {
             .padding(.top, 8)
         }
         .widgetPadding(context.size)
+    }
+}
+
+// MARK: - Extra large (iPad)
+
+private struct DriverExtraLarge: View {
+    let context: WidgetRenderContext
+    let standing: DriverStanding
+    @Environment(\.palette) private var palette
+
+    private var stats: DriverSeasonStats { context.stats.driver(standing.driver.id) }
+
+    var body: some View {
+        let table = context.snapshot.driverStandings
+        let rival = standing.position == 1 ? table.dropFirst().first : table.first
+        let series = context.driverSeries([standing] + (rival.map { [$0] } ?? []), emphasize: standing.driver.id)
+            .map { line -> ProgressSeries in
+                var copy = line
+                if line.id != standing.driver.id {
+                    copy.color = palette.secondary
+                    copy.dashed = true
+                }
+                return copy
+            }
+        HStack(alignment: .top, spacing: 24) {
+            VStack(alignment: .leading, spacing: 0) {
+                DriverCard(context: context, standing: standing)
+                    .frame(height: 118)
+                    .background(alignment: .topTrailing) {
+                        DriverNumberWatermark(context: context, standing: standing, size: 92)
+                    }
+                Grid(alignment: .leading, horizontalSpacing: 10, verticalSpacing: 12) {
+                    GridRow {
+                        StatTile(value: "\(stats.wins)", label: "Wins", valueSize: 18)
+                        StatTile(value: "\(stats.podiums)", label: "Podiums", valueSize: 18)
+                    }
+                    GridRow {
+                        StatTile(value: "\(stats.poles)", label: "Poles", valueSize: 18)
+                        StatTile(value: stats.averageFinish.map { String(format: "%.1f", $0) } ?? "–", label: "Avg finish", valueSize: 18)
+                    }
+                }
+                .padding(12)
+                .background(palette.card, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .padding(.top, 12)
+                Spacer(minLength: 8)
+                CapsLabel("Recent form", size: 7.5, color: palette.tertiary)
+                    .padding(.bottom, 4)
+                RecentForm(badges: stats.recent(5), chipWidth: 30, chipHeight: 22, showFlags: context.showFlags)
+            }
+            .frame(width: 270)
+
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    PointsLegend(series: series, size: 10)
+                    Spacer(minLength: 0)
+                    NextRaceTag(context: context)
+                }
+                PointsChart(series: series, lineWidth: 2.2)
+            }
+            .frame(maxWidth: .infinity)
+        }
+        .widgetPadding(.extraLarge)
     }
 }
 

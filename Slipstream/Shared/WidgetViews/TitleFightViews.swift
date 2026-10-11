@@ -10,7 +10,8 @@ struct TitleFightWidgetView: View {
             switch context.size {
             case .small: TitleFightSmall(context: context, table: table)
             case .medium: TitleFightMedium(context: context, table: table)
-            case .large, .extraLarge: TitleFightLarge(context: context, table: table)
+            case .large: TitleFightLarge(context: context, table: table)
+            case .extraLarge: TitleFightExtraLarge(context: context, table: table)
             case .circular: TitleFightCircular(table: table)
             case .rectangular: TitleFightRectangular(context: context, table: table)
             case .inline: TitleFightInline(table: table)
@@ -119,7 +120,7 @@ private struct TitleFightMedium: View {
                     CapsLabel("Title fight", size: 9)
                     Spacer(minLength: 0)
                 }
-                PointsChart(series: series, showsAxis: false)
+                PointsChart(series: series, showsAxis: false, window: 8)
             }
             .frame(maxWidth: .infinity)
 
@@ -209,9 +210,14 @@ private struct TitleFightLarge: View {
             }
             .padding(.top, 6)
 
-            PointsChart(series: series)
+            HStack {
+                CapsLabel("Last 8 rounds", size: 7.5, color: palette.tertiary)
+                Spacer(minLength: 0)
+            }
+            .padding(.top, 8)
+            PointsChart(series: series, window: 8)
                 .frame(maxHeight: .infinity)
-                .padding(.top, 10)
+                .padding(.top, 4)
 
             Rectangle().fill(palette.hairline).frame(height: 1).padding(.vertical, 8)
 
@@ -246,6 +252,64 @@ private struct TitleFightLarge: View {
             .padding(.top, 8)
         }
         .widgetPadding(context.size)
+    }
+}
+
+// MARK: - Extra large (iPad)
+
+private struct TitleFightExtraLarge: View {
+    let context: WidgetRenderContext
+    let table: [DriverStanding]
+    @Environment(\.palette) private var palette
+
+    var body: some View {
+        let contenders = context.contenders(limit: 5)
+        let series = context.driverSeries(contenders, emphasize: contenders.first?.driver.id)
+        HStack(alignment: .top, spacing: 24) {
+            VStack(alignment: .leading, spacing: 0) {
+                CapsLabel("Drivers' title fight · last 8 rounds", size: 9)
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    Text(contenders[0].driver.familyName.uppercased())
+                        .font(Typo.display(20, weight: .heavy))
+                        .foregroundStyle(palette.primary)
+                    if contenders.count > 1 {
+                        Text("leads by \(Fmt.points(contenders[0].points - contenders[1].points))")
+                            .font(Typo.text(12, weight: .semibold))
+                            .foregroundStyle(palette.secondary)
+                    }
+                }
+                .padding(.top, 6)
+                PointsChart(series: series, window: 8)
+                    .padding(.top, 10)
+            }
+            .frame(maxWidth: .infinity)
+
+            VStack(alignment: .leading, spacing: 0) {
+                HStack {
+                    CapsLabel("Driver", size: 7.5, color: palette.tertiary)
+                    Spacer()
+                    CapsLabel("Max possible", size: 7.5, color: palette.tertiary)
+                }
+                .padding(.bottom, 6)
+                ForEach(Array(contenders.enumerated()), id: \.offset) { index, standing in
+                    ContenderRow(
+                        context: context,
+                        standing: standing,
+                        leaderPoints: contenders[0].points,
+                        isDashed: series[index].dashed,
+                        showMax: true
+                    )
+                    .frame(maxHeight: .infinity)
+                }
+                Text(context.titleFightCaption)
+                    .font(Typo.text(10, weight: .medium))
+                    .foregroundStyle(palette.secondary)
+                    .lineLimit(1)
+                    .padding(.top, 6)
+            }
+            .frame(width: 280)
+        }
+        .widgetPadding(.extraLarge)
     }
 }
 

@@ -135,11 +135,26 @@ struct Race: Codable, Hashable, Identifiable, Sendable {
     var end: Date { raceSession.end }
     var isSprintWeekend: Bool { sessions.contains { $0.kind == .sprint } }
 
-    /// "Singapore" for "Singapore Grand Prix".
+    /// "Singapore" for "Singapore Grand Prix", "Italy" for "Italian Grand Prix".
     var shortName: String {
         let trimmed = name.replacingOccurrences(of: " Grand Prix", with: "")
+        if let place = Race.placeNames[trimmed] { return place }
         return trimmed.isEmpty ? name : trimmed
     }
+
+    /// Race names that are adjectives ("Italian") read better as places in tight layouts.
+    private static let placeNames: [String: String] = [
+        "Australian": "Australia", "Chinese": "China", "Japanese": "Japan", "Saudi Arabian": "Saudi Arabia",
+        "Canadian": "Canada", "Spanish": "Spain", "Barcelona-Catalunya": "Barcelona", "Austrian": "Austria",
+        "British": "Britain", "Belgian": "Belgium", "Hungarian": "Hungary", "Dutch": "Netherlands",
+        "Italian": "Italy", "Emilia Romagna": "Imola", "Portuguese": "Portugal", "French": "France",
+        "German": "Germany", "Russian": "Russia", "Turkish": "Turkey", "Malaysian": "Malaysia",
+        "Korean": "Korea", "Indian": "India", "European": "Europe", "Tuscan": "Mugello", "Styrian": "Styria",
+        "Brazilian": "Brazil", "Mexican": "Mexico", "Argentine": "Argentina", "South African": "South Africa",
+        "Swedish": "Sweden", "Swiss": "Switzerland", "Moroccan": "Morocco", "San Marino": "San Marino",
+        "Luxembourg": "Luxembourg", "Pacific": "Pacific", "United States": "United States",
+        "United States West": "Long Beach", "Caesars Palace": "Las Vegas", "Pescara": "Pescara",
+    ]
 
     func nextSession(after now: Date) -> Session? {
         sessions.first { $0.end > now }

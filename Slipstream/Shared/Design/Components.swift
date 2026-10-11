@@ -255,6 +255,7 @@ struct StatTile: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
             CapsLabel(label, size: 7.5, color: palette.tertiary)
+                .minimumScaleFactor(0.6)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -297,7 +298,10 @@ struct CountdownText: View {
     }
 
     private func pair(_ a: Int, _ aUnit: String, _ b: Int, _ bUnit: String) -> some View {
-        (number(a) + unit(" \(aUnit)  ") + number(b) + unit(" \(bUnit)"))
+        let text = b == 0
+            ? number(a) + unit(" \(aUnit)")
+            : number(a) + unit(" \(aUnit)  ") + number(b) + unit(" \(bUnit)")
+        return text
             .foregroundStyle(palette.primary)
             .lineLimit(1)
             .minimumScaleFactor(0.55)

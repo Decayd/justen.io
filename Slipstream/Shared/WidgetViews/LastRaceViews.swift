@@ -9,7 +9,8 @@ struct LastRaceWidgetView: View {
             switch context.size {
             case .small: LastRaceSmall(context: context, race: race, results: results)
             case .medium: LastRaceMedium(context: context, race: race, results: results)
-            case .large, .extraLarge: LastRaceLarge(context: context, race: race, results: results)
+            case .large: LastRaceLarge(context: context, race: race, results: results)
+            case .extraLarge: LastRaceExtraLarge(context: context, race: race, results: results)
             case .circular: LastRaceCircular(results: results)
             case .rectangular: LastRaceRectangular(context: context, race: race, results: results)
             case .inline: LastRaceInline(context: context, race: race, results: results)
@@ -225,6 +226,54 @@ private struct LastRaceLarge: View {
             }
         }
         .widgetPadding(context.size)
+    }
+}
+
+// MARK: - Extra large (iPad)
+
+private struct LastRaceExtraLarge: View {
+    let context: WidgetRenderContext
+    let race: Race
+    let results: RoundResults
+    @Environment(\.palette) private var palette
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 26) {
+            VStack(alignment: .leading, spacing: 0) {
+                HStack(spacing: 6) {
+                    if context.showFlags { FlagText(flag: context.flag(for: race), size: 15) }
+                    CapsLabel("Round \(race.round) · \(Fmt.day(race.start))", size: 9)
+                }
+                Text(race.name.uppercased())
+                    .font(Typo.display(19))
+                    .foregroundStyle(palette.primary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+                    .padding(.top, 5)
+                PodiumView(entries: podiumEntries(results, context: context, withGaps: true), codeSize: 15, showDetail: true)
+                    .padding(.top, 14)
+                if let fastest = results.fastestLap {
+                    FastestLapRow(context: context, result: fastest)
+                        .padding(.top, 10)
+                }
+            }
+            .frame(width: 300)
+
+            VStack(spacing: 0) {
+                HStack {
+                    CapsLabel("Classification", size: 8, color: palette.tertiary)
+                    Spacer()
+                    CapsLabel("Pts", size: 8, color: palette.tertiary)
+                }
+                .padding(.bottom, 4)
+                ForEach(Array(results.race.dropFirst(3).prefix(10).enumerated()), id: \.offset) { _, result in
+                    ClassificationRow(context: context, result: result)
+                        .frame(maxHeight: .infinity)
+                }
+            }
+            .frame(maxWidth: .infinity)
+        }
+        .widgetPadding(.extraLarge)
     }
 }
 

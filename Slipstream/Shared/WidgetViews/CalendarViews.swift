@@ -69,7 +69,9 @@ private struct CalendarList: View {
         HStack(spacing: 6) {
             CapsLabel(isSmall ? "Up next" : "\(String(context.snapshot.season)) Calendar", size: 9)
             Spacer(minLength: 0)
-            CapsLabel("\(completed)/\(context.snapshot.races.count)", size: 9, color: palette.tertiary)
+            if !isSmall {
+                CapsLabel("\(completed) of \(context.snapshot.races.count) done", size: 8.5, color: palette.tertiary)
+            }
         }
         if !isSmall {
             SeasonProgressBar(completed: completed, total: context.snapshot.races.count)
